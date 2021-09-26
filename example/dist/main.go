@@ -1,9 +1,7 @@
 package main
 
-import (
-	"github.com/NICEXAI/lazy-template-engine/example/origin/test"
-)
+import "github.com/NICEXAI/lazy-template-engine/example/dist/test"
 
 func main() {
-	test.Test()
+	testOne.Test()
 }
