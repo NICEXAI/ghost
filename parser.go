@@ -11,6 +11,7 @@ const (
 	lazyName = "@Lazy"
 
 	varCommand   = "var"
+	ifCommand    = "if"
 	rangeCommand = "range"
 )
 
@@ -20,22 +21,47 @@ func isLazyCommand(line string) bool {
 }
 
 type Command struct {
-	Replace []VarCommand
-	Range   int // affected range
+	ValCommand []VarCommand
+	IfCommand  []IfCommand
 }
 
 type VarCommand struct {
 	Variable string // variable
 	Target   string // replace the content
+	Range    int    // affected range
+}
+
+type IfCommand struct {
+	Expr  string // judgment condition
+	Range int    // affected range
 }
 
 func parseLazyCommand(line string) (command Command, err error) {
+	var (
+		rangeLine int
+		newVarCommand []VarCommand
+		newIfCommand []IfCommand
+	)
+
 	if !isLazyCommand(line) {
 		return command, errors.New("invalid lazy command")
 	}
 
 	for _, oTag := range strings.Split(line, " ") {
 		if oTag == "//" || oTag == " " || oTag == lazyName {
+			continue
+		}
+
+		//parse range command
+		if strings.HasPrefix(oTag, rangeCommand) {
+			vList := strings.Split(oTag, ":")
+			if len(vList) != 2 {
+				return command, errors.New("invalid range command, error: " + oTag)
+			}
+			rangeLine, err = strconv.Atoi(vList[1])
+			if err != nil {
+				return command, err
+			}
 			continue
 		}
 
@@ -48,25 +74,38 @@ func parseLazyCommand(line string) (command Command, err error) {
 			replaceCommand := VarCommand{}
 			replaceCommand.Variable = vList[0][len(varCommand)+1:]
 			replaceCommand.Target = vList[1]
-			command.Replace = append(command.Replace, replaceCommand)
+			replaceCommand.Range = rangeLine
+			command.ValCommand = append(command.ValCommand, replaceCommand)
 			continue
 		}
 
-		//parse range command
-		if strings.HasPrefix(oTag, rangeCommand) {
+		//parse if command
+		if strings.HasPrefix(oTag, ifCommand) {
 			vList := strings.Split(oTag, ":")
 			if len(vList) != 2 {
-				return command, errors.New("invalid range command, error: " + oTag)
+				return command, errors.New("invalid if command, error: " + oTag)
 			}
-			rangeNum := 0
-			rangeNum, err = strconv.Atoi(vList[1])
-			if err != nil {
-				return command, err
-			}
-			command.Range = rangeNum
+
+			command.IfCommand = append(command.IfCommand, IfCommand{
+				Expr: vList[1],
+				Range: rangeLine,
+			})
 			continue
 		}
 	}
+
+	for _, varOrder := range command.ValCommand {
+		varOrder.Range = rangeLine
+		newVarCommand = append(newVarCommand, varOrder)
+	}
+
+	for _, ifOrder := range command.IfCommand {
+		ifOrder.Range = rangeLine
+		newIfCommand = append(newIfCommand, ifOrder)
+	}
+
+	command.ValCommand = newVarCommand
+	command.IfCommand = newIfCommand
 
 	return command, nil
 }

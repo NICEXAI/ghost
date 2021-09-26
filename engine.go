@@ -2,6 +2,7 @@ package lazyTemplate
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -50,17 +51,28 @@ func Parse(tempName string, options map[string]string) (temp Template, err error
 		//parse template file
 		if isLazyCommand(lineCon) {
 			command, err = parseLazyCommand(lineCon)
+			bData, _ := json.Marshal(command)
+			fmt.Println(string(bData))
 			if err != nil {
 				break
 			}
 			continue
 		}
 
-		if command.Range > 0 && len(command.Replace) > 0 {
-			for _, order := range command.Replace {
-				lineCon = strings.ReplaceAll(lineCon, order.Target, options[order.Variable])
+		if len(command.ValCommand) > 0 {
+			var nextVarCommand []VarCommand
+
+			for _, order := range command.ValCommand  {
+				if order.Range > 0 {
+					lineCon = strings.ReplaceAll(lineCon, order.Target, options[order.Variable])
+					order.Range --
+				}
+				if order.Range > 0 {
+					nextVarCommand = append(nextVarCommand, order)
+				}
 			}
-			command.Range--
+
+			command.ValCommand = nextVarCommand
 		}
 
 		temp.builder.WriteString(lineCon + "\n")

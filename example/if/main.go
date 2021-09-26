@@ -12,13 +12,11 @@ func main() {
 	currentPath, _ := os.Getwd()
 
 	options := make(map[string]string)
-	options["name"] = "Lazy"
-	options["path"] = "dist"
-	options["pack_name"] = "testOne"
+	options["env"] = "dev"
 
 
-	originFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/origin")
-	targetFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/dist")
+	originFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/if/origin")
+	targetFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/if/dist")
 
 	if err := lazyTemplate.ParseAll(originFolder, targetFolder, options); err != nil {
 		fmt.Println(err)
