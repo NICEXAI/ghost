@@ -1,2 +1,2 @@
-# lazy-template-engine
+# ghost
 An annotation-based template engine.
