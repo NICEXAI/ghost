@@ -7,15 +7,16 @@ import (
 )
 
 const (
-	LazyCommand = "// lazy"
+	lazyTag = "// @Lazy"
 
-	Replace = "replace"
-	Range   = "range"
+	lazyName = "@Lazy"
+	replace  = "replace"
+	ranges   = "range"
 )
 
 func isLazyCommand(line string) bool {
 	line = strings.TrimSpace(line)
-	return strings.HasPrefix(line, LazyCommand)
+	return strings.HasPrefix(line, lazyTag)
 }
 
 type Command struct {
@@ -34,12 +35,12 @@ func parseLazyCommand(line string) (command Command, err error) {
 	}
 
 	for _, oTag := range strings.Split(line, " ") {
-		if oTag == "//" || oTag == " " || oTag == "lazy" {
+		if oTag == "//" || oTag == " " || oTag == lazyName {
 			continue
 		}
 
 		//parse replace command
-		if strings.HasPrefix(oTag, Replace) {
+		if strings.HasPrefix(oTag, replace) {
 			vList := strings.Split(oTag, ">")
 			if len(vList) != 2 {
 				return command, errors.New("invalid replace command, error: " + oTag)
@@ -52,7 +53,7 @@ func parseLazyCommand(line string) (command Command, err error) {
 		}
 
 		//parse range command
-		if strings.HasPrefix(oTag, Range) {
+		if strings.HasPrefix(oTag, ranges) {
 			vList := strings.Split(oTag, ":")
 			if len(vList) != 2 {
 				return command, errors.New("invalid range command, error: " + oTag)
