@@ -14,6 +14,7 @@ func main() {
 	options := make(map[string]interface{})
 
 	options["env"] = "dev"
+	options["msg"] = "nice"
 	options["name"] = "ghost"
 
 	originFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/if/origin")
