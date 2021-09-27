@@ -64,6 +64,7 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 			}
 			command.IfCommand = append(command.IfCommand, newCommand.IfCommand...)
 			command.ValCommand = append(command.ValCommand, newCommand.ValCommand...)
+			command.RangeCommand = append(command.RangeCommand, newCommand.RangeCommand...)
 
 			bData, _ := json.Marshal(command)
 			fmt.Println(string(bData))

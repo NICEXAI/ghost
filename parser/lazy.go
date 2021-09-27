@@ -12,6 +12,7 @@ const (
 
 	varCommand   = "var"
 	ifCommand    = "if"
+	rangeCommand = "range"
 	scopeCommand = "scope"
 )
 
@@ -21,8 +22,9 @@ func IsLazyCommand(line string) bool {
 }
 
 type Command struct {
-	ValCommand []VarCommand
-	IfCommand  []IfCommand
+	ValCommand   []VarCommand
+	IfCommand    []IfCommand
+	RangeCommand []RangeCommand
 }
 
 type VarCommand struct {
@@ -36,32 +38,39 @@ type IfCommand struct {
 	Scope int    // affected scope
 }
 
+type RangeCommand struct {
+	Expr  string // judgment condition
+	Scope int    // affected scope
+}
+
 func ParseLazyCommand(line string) (command Command, err error) {
 	var (
-		rangeLine     int
-		newVarCommand []VarCommand
-		newIfCommand  []IfCommand
+		scopeLine       int
 	)
 
 	if !IsLazyCommand(line) {
 		return command, errors.New("invalid lazy command")
 	}
 
-	for _, oTag := range strings.Split(line, " ") {
-		if oTag == "//" || oTag == " " || oTag == lazyName {
-			continue
-		}
+	oTagList := strings.Split(line, " ")
 
+	for _, oTag := range oTagList {
 		//parse scope command
 		if strings.HasPrefix(oTag, scopeCommand) {
 			vList := strings.Split(oTag, ":")
 			if len(vList) != 2 {
 				return command, errors.New("invalid range command, error: " + oTag)
 			}
-			rangeLine, err = strconv.Atoi(vList[1])
+			scopeLine, err = strconv.Atoi(vList[1])
 			if err != nil {
 				return command, err
 			}
+			break
+		}
+	}
+
+	for _, oTag := range oTagList {
+		if oTag == "//" || oTag == " " || oTag == lazyName {
 			continue
 		}
 
@@ -74,7 +83,7 @@ func ParseLazyCommand(line string) (command Command, err error) {
 			replaceCommand := VarCommand{}
 			replaceCommand.Variable = vList[0][len(varCommand)+1:]
 			replaceCommand.Target = vList[1]
-			replaceCommand.Scope = rangeLine
+			replaceCommand.Scope = scopeLine
 			command.ValCommand = append(command.ValCommand, replaceCommand)
 			continue
 		}
@@ -88,24 +97,25 @@ func ParseLazyCommand(line string) (command Command, err error) {
 
 			command.IfCommand = append(command.IfCommand, IfCommand{
 				Expr:  vList[1],
-				Scope: rangeLine,
+				Scope: scopeLine,
+			})
+			continue
+		}
+
+		//parse range command
+		if strings.HasPrefix(oTag, rangeCommand) {
+			vList := strings.Split(oTag, ":")
+			if len(vList) != 2 {
+				return command, errors.New("invalid range command, error: " + oTag)
+			}
+
+			command.RangeCommand = append(command.RangeCommand, RangeCommand{
+				Expr:  vList[1],
+				Scope: scopeLine,
 			})
 			continue
 		}
 	}
-
-	for _, varOrder := range command.ValCommand {
-		varOrder.Scope = rangeLine
-		newVarCommand = append(newVarCommand, varOrder)
-	}
-
-	for _, ifOrder := range command.IfCommand {
-		ifOrder.Scope = rangeLine
-		newIfCommand = append(newIfCommand, ifOrder)
-	}
-
-	command.ValCommand = newVarCommand
-	command.IfCommand = newIfCommand
 
 	return command, nil
 }
