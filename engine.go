@@ -1,15 +1,17 @@
-package lazyTemplate
+package ghost
 
 import (
 	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/NICEXAI/ghost/parser"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/NICEXAI/lazy-template-engine/util"
+	"github.com/NICEXAI/ghost/util"
 
 	"github.com/fatih/color"
 )
@@ -23,7 +25,7 @@ func (t *Template) SaveAsFile(name string) error {
 }
 
 // Parse parse template files
-func Parse(tempName string, options map[string]string) (temp Template, err error) {
+func Parse(tempName string, options map[string]interface{}) (temp Template, err error) {
 	if !util.IsFileExist(tempName) {
 		return temp, errors.New("template file not exist")
 	}
@@ -36,10 +38,16 @@ func Parse(tempName string, options map[string]string) (temp Template, err error
 	}
 
 	buf := bufio.NewReader(f)
-	command := Command{}
+	command := parser.Command{}
 
 	for {
-		var line []byte
+		var (
+			line           []byte
+			newCommand     parser.Command
+			nextIfCommand  []parser.IfCommand
+			nextVarCommand []parser.VarCommand
+			ignoreStatus   bool
+		)
 
 		line, _, err = buf.ReadLine()
 		if err != nil {
@@ -49,23 +57,76 @@ func Parse(tempName string, options map[string]string) (temp Template, err error
 		lineCon := string(line)
 
 		//parse template file
-		if isLazyCommand(lineCon) {
-			command, err = parseLazyCommand(lineCon)
-			bData, _ := json.Marshal(command)
-			fmt.Println(string(bData))
+		if parser.IsLazyCommand(lineCon) {
+			newCommand, err = parser.ParseLazyCommand(lineCon)
 			if err != nil {
 				break
 			}
+			command.IfCommand = append(command.IfCommand, newCommand.IfCommand...)
+			command.ValCommand = append(command.ValCommand, newCommand.ValCommand...)
+
+			bData, _ := json.Marshal(command)
+			fmt.Println(string(bData))
 			continue
 		}
 
-		if len(command.ValCommand) > 0 {
-			var nextVarCommand []VarCommand
+		//execute if command
+		if len(command.IfCommand) > 0 {
+			for _, order := range command.IfCommand {
+				var res interface{}
 
-			for _, order := range command.ValCommand  {
 				if order.Range > 0 {
-					lineCon = strings.ReplaceAll(lineCon, order.Target, options[order.Variable])
-					order.Range --
+					if !ignoreStatus {
+						res, err = parser.ParseAndExecuteExpr(order.Expr, options)
+						if err != nil {
+							return temp, err
+						}
+
+						bRes, ok := res.(bool)
+						if !ok {
+							return temp, errors.New("expr must be a bool")
+						}
+
+						if !bRes {
+							ignoreStatus = true
+						}
+					}
+
+					order.Range--
+				}
+				if order.Range > 0 {
+					nextIfCommand = append(nextIfCommand, order)
+				}
+			}
+
+			command.IfCommand = nextIfCommand
+		}
+
+		//execute var command
+		if !ignoreStatus && len(command.ValCommand) > 0 {
+			for _, order := range command.ValCommand {
+				if order.Range > 0 {
+					var (
+						originVal interface{}
+						lData     []byte
+						lastVal   string
+					)
+
+					originVal = options[order.Variable]
+					switch lv := originVal.(type) {
+					case string:
+						lastVal = lv
+					case int:
+						lastVal = strconv.Itoa(lv)
+					case map[string]interface{}:
+						lData, err = json.Marshal(lv)
+						if err != nil {
+							return Template{}, err
+						}
+						lastVal = string(lData)
+					}
+					lineCon = strings.ReplaceAll(lineCon, order.Target, lastVal)
+					order.Range--
 				}
 				if order.Range > 0 {
 					nextVarCommand = append(nextVarCommand, order)
@@ -75,14 +136,16 @@ func Parse(tempName string, options map[string]string) (temp Template, err error
 			command.ValCommand = nextVarCommand
 		}
 
-		temp.builder.WriteString(lineCon + "\n")
+		if !ignoreStatus {
+			temp.builder.WriteString(lineCon + "\n")
+		}
 	}
 
 	return temp, nil
 }
 
 // ParseAll parse all template files in the folder
-func ParseAll(originFolder, targetFolder string, options map[string]string) error {
+func ParseAll(originFolder, targetFolder string, options map[string]interface{}) error {
 	if !util.IsFolderExist(originFolder) {
 		return errors.New("origin folder is not exist")
 	}

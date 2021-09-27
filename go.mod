@@ -1,4 +1,4 @@
-module github.com/NICEXAI/lazy-template-engine
+module github.com/NICEXAI/ghost
 
 go 1.17
 

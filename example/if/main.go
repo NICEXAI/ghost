@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	lazyTemplate "github.com/NICEXAI/lazy-template-engine"
+	"github.com/NICEXAI/ghost"
 	"os"
 	"path"
 	"strings"
@@ -11,14 +11,15 @@ import (
 func main() {
 	currentPath, _ := os.Getwd()
 
-	options := make(map[string]string)
-	options["env"] = "dev"
+	options := make(map[string]interface{})
 
+	options["env"] = "dev"
+	options["name"] = "ghost"
 
 	originFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/if/origin")
 	targetFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/if/dist")
 
-	if err := lazyTemplate.ParseAll(originFolder, targetFolder, options); err != nil {
+	if err := ghost.ParseAll(originFolder, targetFolder, options); err != nil {
 		fmt.Println(err)
 	}
 }

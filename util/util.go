@@ -89,3 +89,17 @@ func GetFileListFromFolder(folder string) (files []FileInfo, err error) {
 
 	return files, nil
 }
+
+// Include Whether the current array contains the value
+func Include(data interface{}, list []interface{}) bool {
+	var isExist bool
+
+	for _, val := range list {
+		if data == val {
+			isExist = true
+			break
+		}
+	}
+
+	return isExist
+}

@@ -1,4 +1,4 @@
-package lazyTemplate
+package parser
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ const (
 	rangeCommand = "range"
 )
 
-func isLazyCommand(line string) bool {
+func IsLazyCommand(line string) bool {
 	line = strings.TrimSpace(line)
 	return strings.HasPrefix(line, lazyTag)
 }
@@ -36,14 +36,14 @@ type IfCommand struct {
 	Range int    // affected range
 }
 
-func parseLazyCommand(line string) (command Command, err error) {
+func ParseLazyCommand(line string) (command Command, err error) {
 	var (
-		rangeLine int
+		rangeLine     int
 		newVarCommand []VarCommand
-		newIfCommand []IfCommand
+		newIfCommand  []IfCommand
 	)
 
-	if !isLazyCommand(line) {
+	if !IsLazyCommand(line) {
 		return command, errors.New("invalid lazy command")
 	}
 
@@ -87,7 +87,7 @@ func parseLazyCommand(line string) (command Command, err error) {
 			}
 
 			command.IfCommand = append(command.IfCommand, IfCommand{
-				Expr: vList[1],
+				Expr:  vList[1],
 				Range: rangeLine,
 			})
 			continue
