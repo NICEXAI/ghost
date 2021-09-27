@@ -12,7 +12,7 @@ const (
 
 	varCommand   = "var"
 	ifCommand    = "if"
-	rangeCommand = "range"
+	scopeCommand = "scope"
 )
 
 func IsLazyCommand(line string) bool {
@@ -28,12 +28,12 @@ type Command struct {
 type VarCommand struct {
 	Variable string // variable
 	Target   string // replace the content
-	Range    int    // affected range
+	Scope    int    // affected scope
 }
 
 type IfCommand struct {
 	Expr  string // judgment condition
-	Range int    // affected range
+	Scope int    // affected scope
 }
 
 func ParseLazyCommand(line string) (command Command, err error) {
@@ -52,8 +52,8 @@ func ParseLazyCommand(line string) (command Command, err error) {
 			continue
 		}
 
-		//parse range command
-		if strings.HasPrefix(oTag, rangeCommand) {
+		//parse scope command
+		if strings.HasPrefix(oTag, scopeCommand) {
 			vList := strings.Split(oTag, ":")
 			if len(vList) != 2 {
 				return command, errors.New("invalid range command, error: " + oTag)
@@ -74,7 +74,7 @@ func ParseLazyCommand(line string) (command Command, err error) {
 			replaceCommand := VarCommand{}
 			replaceCommand.Variable = vList[0][len(varCommand)+1:]
 			replaceCommand.Target = vList[1]
-			replaceCommand.Range = rangeLine
+			replaceCommand.Scope = rangeLine
 			command.ValCommand = append(command.ValCommand, replaceCommand)
 			continue
 		}
@@ -88,19 +88,19 @@ func ParseLazyCommand(line string) (command Command, err error) {
 
 			command.IfCommand = append(command.IfCommand, IfCommand{
 				Expr:  vList[1],
-				Range: rangeLine,
+				Scope: rangeLine,
 			})
 			continue
 		}
 	}
 
 	for _, varOrder := range command.ValCommand {
-		varOrder.Range = rangeLine
+		varOrder.Scope = rangeLine
 		newVarCommand = append(newVarCommand, varOrder)
 	}
 
 	for _, ifOrder := range command.IfCommand {
-		ifOrder.Range = rangeLine
+		ifOrder.Scope = rangeLine
 		newIfCommand = append(newIfCommand, ifOrder)
 	}
 

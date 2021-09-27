@@ -75,7 +75,7 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 			for _, order := range command.IfCommand {
 				var res interface{}
 
-				if order.Range > 0 {
+				if order.Scope > 0 {
 					if !ignoreStatus {
 						res, err = parser.ParseAndExecuteExpr(order.Expr, options)
 						if err != nil {
@@ -92,9 +92,9 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 						}
 					}
 
-					order.Range--
+					order.Scope--
 				}
-				if order.Range > 0 {
+				if order.Scope > 0 {
 					nextIfCommand = append(nextIfCommand, order)
 				}
 			}
@@ -105,7 +105,7 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 		//execute var command
 		if !ignoreStatus && len(command.ValCommand) > 0 {
 			for _, order := range command.ValCommand {
-				if order.Range > 0 {
+				if order.Scope > 0 {
 					var (
 						originVal interface{}
 						lData     []byte
@@ -126,9 +126,9 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 						lastVal = string(lData)
 					}
 					lineCon = strings.ReplaceAll(lineCon, order.Target, lastVal)
-					order.Range--
+					order.Scope--
 				}
-				if order.Range > 0 {
+				if order.Scope > 0 {
 					nextVarCommand = append(nextVarCommand, order)
 				}
 			}
