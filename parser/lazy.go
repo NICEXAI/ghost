@@ -44,7 +44,7 @@ type RangeCommand struct {
 	Loop    int
 	TagId   int // slot tag id
 	Counter int
-	Action  [][]RangeAction
+	Action  [][][]RangeAction
 }
 
 type RangeAction struct {

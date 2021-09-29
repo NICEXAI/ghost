@@ -57,46 +57,64 @@ func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) 
 		switch dataList := value.(type) {
 		case []map[string]interface{}:
 			order.Loop = len(dataList)
-			actionList := make([]RangeAction, 0)
 
-			for _, data := range dataList {
-				bData, err := json.Marshal(data)
-				if err != nil {
-					return order, err
+			for i := 0; i < order.Scope; i++ {
+				loopList := make([][]RangeAction, 0)
+
+				for _, data := range dataList {
+					bData, err := json.Marshal(data)
+					if err != nil {
+						return order, err
+					}
+					loopList = append(loopList, []RangeAction{
+						{
+							Target: target,
+							Value:  string(bData),
+						},
+					})
 				}
-				actionList = append(actionList, RangeAction{
-					Target: target,
-					Value:  string(bData),
-				})
+
+				order.Action = append(order.Action, loopList)
 			}
 
-			order.Action = append(order.Action, actionList)
 			return order, nil
 		case []string:
 			order.Loop = len(dataList)
-			actionList := make([]RangeAction, 0)
 
-			for _, data := range dataList {
-				actionList = append(actionList, RangeAction{
-					Target: target,
-					Value:  data,
-				})
+			for i := 0; i < order.Scope; i++ {
+				loopList := make([][]RangeAction, 0)
+
+				for _, data := range dataList {
+					loopList = append(loopList, []RangeAction{
+						{
+							Target: target,
+							Value:  data,
+						},
+					})
+				}
+
+				order.Action = append(order.Action, loopList)
 			}
 
-			order.Action = append(order.Action, actionList)
 			return order, nil
 		case []int:
 			order.Loop = len(dataList)
-			actionList := make([]RangeAction, 0)
 
-			for _, data := range dataList {
-				actionList = append(actionList, RangeAction{
-					Target: target,
-					Value:  strconv.Itoa(data),
-				})
+			for i := 0; i < order.Scope; i++ {
+				loopList := make([][]RangeAction, 0)
+
+				for _, data := range dataList {
+					loopList = append(loopList, []RangeAction{
+						{
+							Target: target,
+							Value:  strconv.Itoa(data),
+						},
+					})
+				}
+
+				order.Action = append(order.Action, loopList)
 			}
 
-			order.Action = append(order.Action, actionList)
 			return order, nil
 		}
 
@@ -118,19 +136,27 @@ func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) 
 
 		order.Loop = len(dataList)
 
-		for _, oTag := range strings.Split(subExpr, ",") {
-			tagInfo := strings.Split(oTag, ">")
-			if len(tagInfo) != 2 {
-				return order, errors.New(fmt.Sprintf("%v is invalid", subExpr))
-			}
-			actionList := make([]RangeAction, 0)
+		for i := 0; i < order.Scope; i++ {
+			loopList := make([][]RangeAction, 0)
+
 			for _, data := range dataList {
-				actionList = append(actionList, RangeAction{
-					Target: tagInfo[1],
-					Value:  fmt.Sprintf("%v", data[tagInfo[0]]),
-				})
+				actionList := make([]RangeAction, 0)
+
+				for _, oTag := range strings.Split(subExpr, ",") {
+					tagInfo := strings.Split(oTag, ">")
+					if len(tagInfo) != 2 {
+						return order, errors.New(fmt.Sprintf("%v is invalid", subExpr))
+					}
+					actionList = append(actionList, RangeAction{
+						Target: tagInfo[1],
+						Value:  fmt.Sprintf("%v", data[tagInfo[0]]),
+					})
+				}
+
+				loopList = append(loopList, actionList)
 			}
-			order.Action = append(order.Action, actionList)
+
+			order.Action = append(order.Action, loopList)
 		}
 
 		return order, nil

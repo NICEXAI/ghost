@@ -6,9 +6,10 @@ import (
 
 func main() {
 
-	// @Lazy range:data_list|>ghost scope:4
+	// @Lazy range:data_list|>(name>ghost,age>12) scope:3
 	fmt.Println("I am ghost")
 	fmt.Println("My age is 12")
-	fmt.Println("I am ghost")
 
+	// @Lazy range:data_list>ghost scope:1
+	fmt.Println(`hello, ghost`)
 }

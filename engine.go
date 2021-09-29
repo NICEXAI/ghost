@@ -105,7 +105,10 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 				for i := 0; i < order.Loop; i++ {
 					if len(order.Action) > 0 {
 						newLine := lineCon
-						newLine = strings.ReplaceAll(lineCon, order.Action[0][i].Target, order.Action[0][i].Value)
+
+						for _, action := range order.Action[0][i] {
+							newLine = strings.ReplaceAll(newLine, action.Target, action.Value)
+						}
 
 						newTempCon := strings.Replace(temp.builder.String(), rangeTagCon, newLine, 1)
 						temp.builder.Reset()
@@ -115,6 +118,8 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 						temp.builder.Reset()
 						temp.builder.WriteString(newTempCon)
 					}
+
+					fmt.Println(temp.builder.String())
 				}
 
 				if len(order.Action) > 0 {
