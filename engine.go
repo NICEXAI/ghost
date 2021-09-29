@@ -79,8 +79,8 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 				command.RangeCommand = append(command.RangeCommand, rangeCommand)
 			}
 
-			bData, _ := json.Marshal(command)
-			fmt.Println(string(bData))
+			//bData, _ := json.Marshal(command)
+			//fmt.Println(string(bData))
 			continue
 		}
 
