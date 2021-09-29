@@ -22,7 +22,7 @@ const (
 // ParseAndExecuteRangeExpr parse and execute range expr
 func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) (RangeCommand, error) {
 	var (
-		reg *regexp.Regexp
+		reg   *regexp.Regexp
 		oList [][]string
 	)
 
@@ -57,20 +57,20 @@ func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) 
 		switch dataList := value.(type) {
 		case []map[string]interface{}:
 			order.Loop = len(dataList)
+			actionList := make([]RangeAction, 0)
 
 			for _, data := range dataList {
 				bData, err := json.Marshal(data)
 				if err != nil {
 					return order, err
 				}
-				order.Action = append(order.Action, []RangeAction{
-					{
-						Target: target,
-						Value:  string(bData),
-					},
+				actionList = append(actionList, RangeAction{
+					Target: target,
+					Value:  string(bData),
 				})
 			}
 
+			order.Action = append(order.Action, actionList)
 			return order, nil
 		case []string:
 			order.Loop = len(dataList)

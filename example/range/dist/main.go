@@ -6,10 +6,12 @@ import (
 
 func main() {
 
-	fmt.Println("I am JieKe")
-	fmt.Println("I am 14 age")
+	fmt.Println("I am jieKe")
+	fmt.Println("My age is 12")
+	fmt.Println("I am ghost")
 
 	fmt.Println("I am Mari")
-	fmt.Println("I am 15 age")
+	fmt.Println("My age is 12")
+	fmt.Println("I am ghost")
 
 }
