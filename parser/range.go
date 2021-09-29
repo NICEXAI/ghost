@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) (RangeCommand, error) {
 	var (
 		reg *regexp.Regexp
+		oList [][]string
 	)
 
 	reg = regexp.MustCompile(easyMode)
@@ -45,9 +47,9 @@ func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) 
 	}
 
 	reg = regexp.MustCompile(generalMode)
+	oList = reg.FindAllStringSubmatch(order.Expr, -1)
 
-	if reg.MatchString(order.Expr) {
-		oList := reg.FindAllStringSubmatch(order.Expr, -1)
+	if len(oList) == 2 {
 		variable := oList[0][1]
 		target := oList[1][2]
 		value := attrs[variable]
@@ -61,36 +63,77 @@ func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) 
 				if err != nil {
 					return order, err
 				}
-				order.Action = append(order.Action, RangeAction{
-					Target: target,
-					Value:  string(bData),
+				order.Action = append(order.Action, []RangeAction{
+					{
+						Target: target,
+						Value:  string(bData),
+					},
 				})
 			}
 
 			return order, nil
 		case []string:
 			order.Loop = len(dataList)
+			actionList := make([]RangeAction, 0)
 
 			for _, data := range dataList {
-				order.Action = append(order.Action, RangeAction{
+				actionList = append(actionList, RangeAction{
 					Target: target,
 					Value:  data,
 				})
 			}
 
+			order.Action = append(order.Action, actionList)
 			return order, nil
 		case []int:
+			order.Loop = len(dataList)
+			actionList := make([]RangeAction, 0)
+
 			for _, data := range dataList {
-				order.Action = append(order.Action, RangeAction{
+				actionList = append(actionList, RangeAction{
 					Target: target,
 					Value:  strconv.Itoa(data),
 				})
 			}
 
+			order.Action = append(order.Action, actionList)
 			return order, nil
 		}
 
 		return order, errors.New(fmt.Sprintf("%v's %v type is not support", order.Expr, reflect.TypeOf(oList)))
+	}
+
+	reg = regexp.MustCompile(complexMode)
+	oList = reg.FindAllStringSubmatch(order.Expr, -1)
+
+	if len(oList) == 2 {
+		variable := oList[0][1]
+		subExpr := oList[1][2]
+		value := attrs[variable]
+
+		dataList, ok := value.([]map[string]interface{})
+		if !ok {
+			return order, errors.New(fmt.Sprintf("%v data type must be []map[string]interface{}, not allow %v", variable, reflect.TypeOf(value)))
+		}
+
+		order.Loop = len(dataList)
+
+		for _, oTag := range strings.Split(subExpr, ",") {
+			tagInfo := strings.Split(oTag, ">")
+			if len(tagInfo) != 2 {
+				return order, errors.New(fmt.Sprintf("%v is invalid", subExpr))
+			}
+			actionList := make([]RangeAction, 0)
+			for _, data := range dataList {
+				actionList = append(actionList, RangeAction{
+					Target: tagInfo[1],
+					Value:  fmt.Sprintf("%v", data[tagInfo[0]]),
+				})
+			}
+			order.Action = append(order.Action, actionList)
+		}
+
+		return order, nil
 	}
 
 	return order, errors.New("expr " + order.Expr + " not support")

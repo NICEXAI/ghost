@@ -98,16 +98,15 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 					}
 				}
 
+				// replace target content
 				order.Counter += 1
-
 				rangeTagCon := fmt.Sprintf(rangeTag, order.TagId, order.Counter)
 
-
 				for i := 0; i < order.Loop; i++ {
-
 					if len(order.Action) > 0 {
-						newLine := strings.Replace(lineCon, order.Action[0].Target, order.Action[0].Value, 1)
-						order.Action = order.Action[1:]
+						newLine := lineCon
+						newLine = strings.ReplaceAll(lineCon, order.Action[0][i].Target, order.Action[0][i].Value)
+
 						newTempCon := strings.Replace(temp.builder.String(), rangeTagCon, newLine, 1)
 						temp.builder.Reset()
 						temp.builder.WriteString(newTempCon)
@@ -116,7 +115,10 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 						temp.builder.Reset()
 						temp.builder.WriteString(newTempCon)
 					}
+				}
 
+				if len(order.Action) > 0 {
+					order.Action = order.Action[1:]
 				}
 
 				if order.Counter < order.Scope {
