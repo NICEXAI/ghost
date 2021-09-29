@@ -39,13 +39,22 @@ type IfCommand struct {
 }
 
 type RangeCommand struct {
-	Expr  string // judgment condition
-	Scope int    // affected scope
+	Expr    string // judgment condition
+	Scope   int    // affected scope
+	Loop    int
+	TagId   int // slot tag id
+	Counter int
+	Action  []RangeAction
+}
+
+type RangeAction struct {
+	Target string // replace the content
+	Value  string // current slot value
 }
 
 func ParseLazyCommand(line string) (command Command, err error) {
 	var (
-		scopeLine       int
+		scopeLine int
 	)
 
 	if !IsLazyCommand(line) {

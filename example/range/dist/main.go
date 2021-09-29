@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func main() {
-	fmt.Println("hello ghost")
+
+	fmt.Println("I am jieKe")
+	fmt.Println("I am 12 age")
+
+	fmt.Println("I am Mari")
+	fmt.Println("I am 12 age")
+
 }
