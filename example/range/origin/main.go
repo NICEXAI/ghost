@@ -1,15 +1,16 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func main() {
+	// @Lazy range:count scope:1
+	fmt.Println("ha")
 
-	// @Lazy range:data_list|>(name>ghost,age>12) scope:3
-	fmt.Println("I am ghost")
+	// @Lazy range:count|>num scope:1
+	fmt.Println("current counter is num")
+
+	// @Lazy range:data_list|>(name>lazy,age>12) scope:3
+	fmt.Println("I am lazy")
 	fmt.Println("My age is 12")
 
-	// @Lazy range:data_list>ghost scope:1
-	fmt.Println(`hello, ghost`)
 }

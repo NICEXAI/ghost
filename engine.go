@@ -118,8 +118,6 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 						temp.builder.Reset()
 						temp.builder.WriteString(newTempCon)
 					}
-
-					fmt.Println(temp.builder.String())
 				}
 
 				if len(order.Action) > 0 {

@@ -13,7 +13,7 @@ type UserList []User
 
 type User struct {
 	Name string `json:"name"`
-	Age int `json:"age"`
+	Age  int    `json:"age"`
 }
 
 func main() {
@@ -25,11 +25,11 @@ func main() {
 	userList := UserList{
 		{
 			Name: "JieKe",
-			Age: 14,
+			Age:  14,
 		},
 		{
 			Name: "Mari",
-			Age: 15,
+			Age:  15,
 		},
 	}
 	bUsers, _ := json.Marshal(userList)
@@ -37,6 +37,8 @@ func main() {
 	options["data_list"] = dataList
 
 	//options["data_list"] = []string{"jieKe", "Mari"}
+
+	options["count"] = 3
 
 	originFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/range/origin")
 	targetFolder := path.Join(strings.ReplaceAll(currentPath, `\`, `/`), "example/range/dist")
