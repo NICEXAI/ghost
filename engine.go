@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/NICEXAI/ghost/parser"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/fatih/color"
 )
+
+const rangeTag = "// @Tag %v_%v"
 
 type Template struct {
 	builder strings.Builder
@@ -42,11 +45,12 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 
 	for {
 		var (
-			line           []byte
-			newCommand     parser.Command
-			nextIfCommand  []parser.IfCommand
-			nextVarCommand []parser.VarCommand
-			ignoreStatus   bool
+			line             []byte
+			newCommand       parser.Command
+			nextIfCommand    []parser.IfCommand
+			nextVarCommand   []parser.VarCommand
+			nextRangeCommand []parser.RangeCommand
+			ignoreStatus     bool
 		)
 
 		line, _, err = buf.ReadLine()
@@ -62,11 +66,70 @@ func Parse(tempName string, options map[string]interface{}) (temp Template, err 
 			if err != nil {
 				break
 			}
+
 			command.IfCommand = append(command.IfCommand, newCommand.IfCommand...)
 			command.ValCommand = append(command.ValCommand, newCommand.ValCommand...)
 
-			bData, _ := json.Marshal(command)
-			fmt.Println(string(bData))
+			// preprocess range command
+			for _, rangeCommand := range newCommand.RangeCommand {
+				rangeCommand, err = parser.ParseAndExecuteRangeExpr(rangeCommand, options)
+				if err != nil {
+					return temp, err
+				}
+				command.RangeCommand = append(command.RangeCommand, rangeCommand)
+			}
+
+			//bData, _ := json.Marshal(command)
+			//fmt.Println(string(bData))
+			continue
+		}
+
+		//execute range command
+		if len(command.RangeCommand) > 0 {
+			for _, order := range command.RangeCommand {
+
+				if order.TagId == 0 {
+					order.TagId = rand.Int()
+
+					for i := 0; i < order.Loop; i++ {
+						for s := 0; s < order.Scope; s++ {
+							temp.builder.WriteString(fmt.Sprintf(rangeTag, order.TagId, s+1) + "\n")
+						}
+					}
+				}
+
+				// replace target content
+				order.Counter += 1
+				rangeTagCon := fmt.Sprintf(rangeTag, order.TagId, order.Counter)
+
+				for i := 0; i < order.Loop; i++ {
+					if len(order.Action) > 0 {
+						newLine := lineCon
+
+						for _, action := range order.Action[0][i] {
+							newLine = strings.ReplaceAll(newLine, action.Target, action.Value)
+						}
+
+						newTempCon := strings.Replace(temp.builder.String(), rangeTagCon, newLine, 1)
+						temp.builder.Reset()
+						temp.builder.WriteString(newTempCon)
+					} else {
+						newTempCon := strings.Replace(temp.builder.String(), rangeTagCon, lineCon, 1)
+						temp.builder.Reset()
+						temp.builder.WriteString(newTempCon)
+					}
+				}
+
+				if len(order.Action) > 0 {
+					order.Action = order.Action[1:]
+				}
+
+				if order.Counter < order.Scope {
+					nextRangeCommand = append(nextRangeCommand, order)
+				}
+			}
+
+			command.RangeCommand = nextRangeCommand
 			continue
 		}
 
