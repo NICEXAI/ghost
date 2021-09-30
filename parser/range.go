@@ -145,14 +145,35 @@ func ParseAndExecuteRangeExpr(order RangeCommand, attrs map[string]interface{}) 
 	reg = regexp.MustCompile(complexMode)
 
 	if reg.MatchString(order.Expr) {
+		var (
+			ok             bool
+			originDataList []interface{}
+			newData        map[string]interface{}
+			dataList       []map[string]interface{}
+		)
+
 		oList = reg.FindAllStringSubmatch(order.Expr, -1)
 		variable := oList[0][1]
 		subExpr := oList[0][2]
 		value := attrs[variable]
 
-		dataList, ok := value.([]map[string]interface{})
-		if !ok {
-			return order, errors.New(fmt.Sprintf("%v data type must be []map[string]interface{}, not allow %v", variable, reflect.TypeOf(value)))
+		// convert []interface{} to []map[string]interface{}
+		originDataList, ok = value.([]interface{})
+		if ok && len(originDataList) > 0 {
+			for _, originData := range originDataList {
+				newData, ok = originData.(map[string]interface{})
+				if !ok {
+					return order, errors.New(fmt.Sprintf("%v data type must be []map[string]interface{}, not allow %v", variable, reflect.TypeOf(newData)))
+				}
+				dataList = append(dataList, newData)
+			}
+		}
+
+		if len(dataList) == 0 {
+			dataList, ok = value.([]map[string]interface{})
+			if !ok {
+				return order, errors.New(fmt.Sprintf("%v data type must be []map[string]interface{}, not allow %v", variable, reflect.TypeOf(value)))
+			}
 		}
 
 		order.Loop = len(dataList)
